@@ -4,6 +4,9 @@ package com.example.Account_Summary_Dashboard.service;
 import com.example.Account_Summary_Dashboard.dto.AccountSummaryResponse;
 import com.example.Account_Summary_Dashboard.dto.TransactionResponse;
 import com.example.Account_Summary_Dashboard.dto.UserDashboardResponse;
+import com.example.Account_Summary_Dashboard.exception.AccountsNotFoundException;
+import com.example.Account_Summary_Dashboard.exception.UserBlockedException;
+import com.example.Account_Summary_Dashboard.exception.UserNotFoundException;
 import com.example.Account_Summary_Dashboard.model.Account;
 import com.example.Account_Summary_Dashboard.model.User;
 import com.example.Account_Summary_Dashboard.model.Transaction;
@@ -13,6 +16,7 @@ import com.example.Account_Summary_Dashboard.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,9 +37,14 @@ public class AccountSummaryService {
     public UserDashboardResponse getDashboard(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        if(user.getStatus().equalsIgnoreCase("BLOCKED")){
+            throw new UserBlockedException("User is blocked");
+        }
         List<Account> accounts = accountRepository.findByUser_UserId(userId);
+        if(accounts.isEmpty()){
+            throw new AccountsNotFoundException("Account not found");
+        }
 
         List<AccountSummaryResponse> accountResponses = accounts.stream().map(account -> {
 
@@ -77,3 +86,4 @@ public class AccountSummaryService {
         return "XXXXXX" + accountNumber.substring(accountNumber.length() - 4);
     }
 }
+
